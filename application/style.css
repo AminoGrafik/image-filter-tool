@@ -18,6 +18,7 @@ header {
     flex-wrap: wrap;
     padding: 2rem;
     gap: 2rem;
+    align-items: flex-start; /* Align items to the top */
 }
 
 .panel {
@@ -29,9 +30,11 @@ header {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
+/* --- KEY CHANGES ARE HERE --- */
 .image-container {
     width: 100%;
-    height: 350px;
+    min-height: 350px; /* Set a minimum height */
+    height: auto;      /* Allow height to grow based on content */
     border: 2px dashed #ccc;
     border-radius: 8px;
     margin-top: 1rem;
@@ -44,26 +47,24 @@ header {
 
 #image-preview, #filtered-canvas {
     max-width: 100%;
-    max-height: 100%;
+    max-height: 100%; /* Changed to 100% to respect container */
     display: block;
 }
 
+/* Let ASCII art control its own size */
 #ascii-output {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     background: white;
     font-family: "Courier New", Courier, monospace;
     font-size: 5px; /* Will be adjusted by JS */
     line-height: 1;
     white-space: pre;
-    overflow: hidden;
-    display: none; /* Hidden by default */
     text-align: center;
-    padding: 5px;
+    padding: 10px;
+    /* Removed position:absolute and height:100% to let it have natural height */
+    display: none; /* Hidden by default */
 }
+/* --- END OF KEY CHANGES --- */
+
 
 button {
     display: block;
