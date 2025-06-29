@@ -50,74 +50,101 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedFilter = filterSelect.value;
         toggleControlVisibility(selectedFilter);
 
+        // Reset canvas to original image before applying filter
+        filteredCanvas.width = originalImage.width;
+        filteredCanvas.height = originalImage.height;
+        ctx.drawImage(originalImage, 0, 0);
+
         if (selectedFilter === 'duotone') {
             applyDuotoneFilter();
         } else if (selectedFilter === 'ascii') {
             applyAsciiFilter();
+        } else if (selectedFilter === 'sepia') {
+            applySepiaFilter();
+        } else if (selectedFilter === 'invert') {
+            applyInvertFilter();
         }
     }
 
     // Manages which control panel is visible based on the selected filter
     function toggleControlVisibility(filter) {
+        // Show canvas and hide ASCII output by default for all image filters
+        filteredCanvas.style.display = 'block';
+        asciiOutput.style.display = 'none';
+
         if (filter === 'duotone') {
             duotoneControls.style.display = 'flex';
             asciiControls.style.display = 'none';
-            filteredCanvas.style.display = 'block';
-            asciiOutput.style.display = 'none';
-        } else { // ASCII filter
-            duotoneControls.style.display = 'none';
+        } else if (filter === 'ascii') {
             asciiControls.style.display = 'block';
+            duotoneControls.style.display = 'none';
+            // For ASCII, hide the canvas and show the text output
             filteredCanvas.style.display = 'none';
             asciiOutput.style.display = 'block';
+        } else {
+            // For all other filters (Sepia, Invert, etc.), hide all specific controls
+            duotoneControls.style.display = 'none';
+            asciiControls.style.display = 'none';
         }
+    }
+    
+    // === NEW FILTER FUNCTION: SEPIA ===
+    function applySepiaFilter() {
+        const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            data[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
+            data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
+            data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    // === NEW FILTER FUNCTION: INVERT ===
+    function applyInvertFilter() {
+        const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            data[i] = 255 - data[i];         // Red
+            data[i + 1] = 255 - data[i + 1]; // Green
+            data[i + 2] = 255 - data[i + 2]; // Blue
+        }
+        ctx.putImageData(imageData, 0, 0);
     }
 
     // Applies the DUOTONE effect to the canvas
     function applyDuotoneFilter() {
-        filteredCanvas.width = originalImage.width;
-        filteredCanvas.height = originalImage.height;
-
-        // Draw original image to canvas
-        ctx.drawImage(originalImage, 0, 0);
-
-        // Get pixel data to manipulate
         const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
         const data = imageData.data;
         const color1 = hexToRgb(color1Input.value);
         const color2 = hexToRgb(color2Input.value);
 
-        // Iterate over each pixel and apply duotone logic
         for (let i = 0; i < data.length; i += 4) {
-            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3; // Get grayscale value
-            const t = avg / 255; // Normalize to a 0-1 range
-            // Linearly interpolate between the two chosen colors
-            data[i] = color1.r + (color2.r - color1.r) * t;     // Red
-            data[i + 1] = color1.g + (color2.g - color1.g) * t; // Green
-            data[i + 2] = color1.b + (color2.b - color1.b) * t; // Blue
+            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            const t = avg / 255;
+            data[i] = color1.r + (color2.r - color1.r) * t;
+            data[i + 1] = color1.g + (color2.g - color1.g) * t;
+            data[i + 2] = color1.b + (color2.b - color1.b) * t;
         }
-        // Put the modified pixel data back onto the canvas
         ctx.putImageData(imageData, 0, 0);
     }
 
     // Applies the ASCII ART effect
     function applyAsciiFilter() {
-        // This string maps darker pixels to denser characters.
         const density = 'Ñ@#W$9876543210?!abc;:+=-,._ ';
         const tempCanvas = document.createElement('canvas');
         const tempCtx = tempCanvas.getContext('2d');
-
-        // Resize image for performance and to fit the character grid
         const maxWidth = 120;
         const scale = maxWidth / originalImage.width;
         tempCanvas.width = maxWidth;
-        // Adjust aspect ratio for characters, which are taller than they are wide
         tempCanvas.height = originalImage.height * scale * 0.5;
-
         tempCtx.drawImage(originalImage, 0, 0, tempCanvas.width, tempCanvas.height);
-
         const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
         const data = imageData.data;
-
         let asciiStr = '';
         for (let y = 0; y < tempCanvas.height; y++) {
             for (let x = 0; x < tempCanvas.width; x++) {
@@ -129,11 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
             asciiStr += '\n';
         }
         asciiOutput.textContent = asciiStr;
-
-        // Base the font-size on the visible asciiOutput element, not the hidden canvas
         if (asciiOutput.clientWidth > 0) {
             asciiOutput.style.fontSize = `${asciiOutput.clientWidth / maxWidth * 1.4}px`;
-            // Ensure line height is tight to prevent gaps
             asciiOutput.style.lineHeight = '1.1';
         }
     }
@@ -146,13 +170,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
-        if (selectedFilter === 'duotone') {
-            link.download = `duotone-image-${timestamp}.png`;
-            link.href = filteredCanvas.toDataURL('image/png');
-        } else if (selectedFilter === 'ascii') {
+        if (selectedFilter === 'ascii') {
             link.download = `ascii-art-${timestamp}.txt`;
             const blob = new Blob([asciiOutput.textContent], { type: 'text/plain' });
             link.href = URL.createObjectURL(blob);
+        } else {
+            // This now handles Duotone, Sepia, Invert, and any future canvas filters
+            link.download = `${selectedFilter}-image-${timestamp}.png`;
+            link.href = filteredCanvas.toDataURL('image/png');
         }
         link.click();
     });
