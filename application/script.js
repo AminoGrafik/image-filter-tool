@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadButton = document.getElementById('download-button');
     const filterSelect = document.getElementById('filter-select');
 
-    // Filter Controls
     const controlMap = {
         duotone: document.getElementById('duotone-controls'),
         pixelate: document.getElementById('pixelate-controls'),
@@ -14,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ascii: document.getElementById('ascii-controls'),
     };
 
-    // Sliders and Values
     const pixelateSlider = document.getElementById('pixelate-slider');
     const pixelateValue = document.getElementById('pixelate-value');
     const vignetteSlider = document.getElementById('vignette-slider');
@@ -23,108 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctx = filteredCanvas.getContext('2d');
     let originalImage = null;
 
-    // --- EVENT LISTENERS ---
-
-    /**
-     * Attaches event listeners to controls to re-apply filters on change.
-     */
-    function setupEventListeners() {
-        uploadButton.addEventListener('change', handleImageUpload);
-        filterSelect.addEventListener('change', masterFilterHandler);
-
-        const interactiveControls = [
-            ...document.querySelectorAll('input[type="range"]'),
-            ...document.querySelectorAll('input[type="color"]'),
-        ];
-        interactiveControls.forEach(control => {
-            control.addEventListener('input', masterFilterHandler);
-        });
-
-        pixelateSlider.addEventListener('input', () => pixelateValue.textContent = pixelateSlider.value);
-        vignetteSlider.addEventListener('input', () => vignetteValue.textContent = vignetteSlider.value);
-        downloadButton.addEventListener('click', handleDownload);
-    }
-
-    // --- CORE FUNCTIONS ---
-
-    /**
-     * Handles the initial upload and drawing of an image.
-     * @param {Event} event - The file input change event.
-     */
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            originalImage = new Image();
-            originalImage.onload = () => {
-                filterSelect.value = 'none';
-                masterFilterHandler();
-                downloadButton.disabled = false;
-            };
-            originalImage.src = e.target.result;
-            imagePreview.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-
-    /**
-     * Main handler that is called any time a filter needs to be re-applied.
-     */
-    function masterFilterHandler() {
-        if (!originalImage) return;
-
-        const selectedFilter = filterSelect.value;
-        toggleControlVisibility(selectedFilter);
-
-        // Reset canvas to the original image
-        filteredCanvas.width = originalImage.width;
-        filteredCanvas.height = originalImage.height;
-        ctx.drawImage(originalImage, 0, 0);
-
-        // Use a function map to apply the selected filter
-        const filterAction = filterActions[selectedFilter];
-        if (filterAction) {
-            filterAction();
-        }
-    }
-
-    /**
-     * Shows and hides the appropriate control panels for the selected filter.
-     * @param {string} filter - The name of the currently selected filter.
-     */
-    function toggleControlVisibility(filter) {
-        filteredCanvas.style.display = 'block';
-        asciiOutput.style.display = 'none';
-
-        // Hide all control panels
-        Object.values(controlMap).forEach(control => control.hidden = true);
-
-        // Show the specific control panel if it exists
-        if (controlMap[filter]) {
-            controlMap[filter].hidden = false;
-        }
-
-        // Special case for ASCII
-        if (filter === 'ascii') {
-            filteredCanvas.style.display = 'none';
-            asciiOutput.style.display = 'block';
-        }
-    }
-
-    // --- FILTER IMPLEMENTATIONS ---
-
-    /**
-     * A helper function to abstract the pixel manipulation boilerplate.
-     * @param {Function} manipulationLogic - A callback function that receives the pixel data array.
-     */
-    function applyPixelManipulation(manipulationLogic) {
-        const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
-        manipulationLogic(imageData.data);
-        ctx.putImageData(imageData, 0, 0);
-    }
-
+    // --- CRITICAL FIX: DEFINE THE FILTER ACTIONS OBJECT BEFORE IT IS USED ---
     const filterActions = {
         grayscale: () => applyPixelManipulation(data => {
             for (let i = 0; i < data.length; i += 4) {
@@ -164,19 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         },
         
-        // **PERFORMANCE-OPTIMIZED VERSION**
         pixelate: () => {
             const blockSize = parseInt(pixelateSlider.value, 10);
             const w = filteredCanvas.width;
             const h = filteredCanvas.height;
-            const imageData = ctx.getImageData(0, 0, w, h).data;
-
             for (let y = 0; y < h; y += blockSize) {
                 for (let x = 0; x < w; x += blockSize) {
-                    // Get the pixel index for the top-left of the block
-                    const i = (y * w + x) * 4;
-                    // Use the color of the top-left pixel for the whole block
-                    ctx.fillStyle = `rgba(${imageData[i]},${imageData[i+1]},${imageData[i+2]},${imageData[i+3]/255})`;
+                    const pixel = ctx.getImageData(x, y, 1, 1).data;
+                    ctx.fillStyle = `rgba(${pixel[0]},${pixel[1]},${pixel[2]},${pixel[3]/255})`;
                     ctx.fillRect(x, y, blockSize, blockSize);
                 }
             }
@@ -205,13 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         vintage: () => {
-            filterActions.sepia(); // Apply sepia logic
-            // Then apply vignette and noise on top
+            filterActions.sepia(); // Apply sepia logic first
             const w = filteredCanvas.width;
             const h = filteredCanvas.height;
             const centerX = w / 2;
             const centerY = h / 2;
-            const strength = 0.7; // Fixed vignette strength
+            const strength = 0.7;
             const radius = Math.sqrt(centerX ** 2 + centerY ** 2);
 
             applyPixelManipulation(data => {
@@ -233,14 +124,13 @@ document.addEventListener('DOMContentLoaded', () => {
             filterActions.grayscale(); // Start with grayscale
             const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
             const data = imageData.data;
-            const inverted = new Uint8ClampedArray(data); // Use a typed array for inverted data
+            const inverted = new Uint8ClampedArray(data);
             for (let i = 0; i < data.length; i += 4) {
                 inverted[i] = 255 - data[i];
                 inverted[i + 1] = 255 - data[i + 1];
                 inverted[i + 2] = 255 - data[i + 2];
             }
             
-            // "Color Dodge" blend mode
             applyPixelManipulation(outputData => {
                  for (let i = 0; i < outputData.length; i += 4) {
                     const base = data[i];
@@ -252,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         ascii: () => {
+            const asciiOutput = document.getElementById('ascii-output');
             const density = 'Ñ@#W$9876543210?!abc;:+=-,._ ';
             const tempCanvas = document.createElement('canvas');
             const tempCtx = tempCanvas.getContext('2d');
@@ -279,12 +170,84 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
     };
+    
+    // --- EVENT LISTENERS ---
+    function setupEventListeners() {
+        uploadButton.addEventListener('change', handleImageUpload);
+        filterSelect.addEventListener('change', masterFilterHandler);
 
-    // --- UTILITY AND DOWNLOAD ---
+        const interactiveControls = [
+            ...document.querySelectorAll('input[type="range"]'),
+            ...document.querySelectorAll('input[type="color"]'),
+        ];
+        interactiveControls.forEach(control => {
+            control.addEventListener('input', masterFilterHandler);
+        });
 
-    /**
-     * Handles downloading the generated image or text file.
-     */
+        pixelateSlider.addEventListener('input', () => pixelateValue.textContent = pixelateSlider.value);
+        vignetteSlider.addEventListener('input', () => vignetteValue.textContent = vignetteSlider.value);
+        downloadButton.addEventListener('click', handleDownload);
+    }
+
+    // --- CORE FUNCTIONS ---
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            originalImage = new Image();
+            originalImage.onload = () => {
+                filterSelect.value = 'none';
+                masterFilterHandler();
+                downloadButton.disabled = false;
+            };
+            originalImage.src = e.target.result;
+            imagePreview.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function masterFilterHandler() {
+        if (!originalImage) return;
+
+        const selectedFilter = filterSelect.value;
+        toggleControlVisibility(selectedFilter);
+
+        filteredCanvas.width = originalImage.width;
+        filteredCanvas.height = originalImage.height;
+        ctx.drawImage(originalImage, 0, 0);
+
+        const filterAction = filterActions[selectedFilter];
+        if (filterAction) {
+            filterAction();
+        }
+    }
+
+    function toggleControlVisibility(filter) {
+        const asciiOutput = document.getElementById('ascii-output');
+        filteredCanvas.style.display = 'block';
+        asciiOutput.style.display = 'none';
+        
+        Object.values(controlMap).forEach(control => control.hidden = true);
+
+        if (controlMap[filter]) {
+            controlMap[filter].hidden = false;
+        }
+
+        if (filter === 'ascii') {
+            filteredCanvas.style.display = 'none';
+            asciiOutput.style.display = 'block';
+        }
+    }
+    
+    // --- HELPER FUNCTIONS ---
+    function applyPixelManipulation(manipulationLogic) {
+        const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
+        manipulationLogic(imageData.data);
+        ctx.putImageData(imageData, 0, 0);
+    }
+    
     function handleDownload() {
         if (!originalImage) return;
         const selectedFilter = filterSelect.value;
@@ -293,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (selectedFilter === 'ascii') {
             link.download = `ascii-art-${timestamp}.txt`;
-            const blob = new Blob([asciiOutput.textContent], { type: 'text/plain' });
+            const blob = new Blob([document.getElementById('ascii-output').textContent], { type: 'text/plain' });
             link.href = URL.createObjectURL(blob);
         } else {
             const filename = selectedFilter === 'none' ? 'original' : selectedFilter;
@@ -303,11 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
         link.click();
     }
 
-    /**
-     * Helper utility to convert a hex color string to an RGB object.
-     * @param {string} hex - The hex color string (e.g., "#FF0000").
-     * @returns {{r: number, g: number, b: number}}
-     */
     function hexToRgb(hex) {
         const bigint = parseInt(hex.slice(1), 16);
         return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
