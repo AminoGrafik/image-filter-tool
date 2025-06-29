@@ -1,16 +1,30 @@
+:root {
+    --primary-color: #007bff;
+    --primary-hover: #0056b3;
+    --background-color: #f0f2f5;
+    --panel-background: #fff;
+    --text-color: #333;
+    --border-color: #ddd;
+    --border-dashed: #ccc;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f0f2f5;
+    background-color: var(--background-color);
     margin: 0;
     padding: 0;
-    color: #333;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 header {
-    background-color: #fff;
+    background-color: var(--panel-background);
     text-align: center;
     padding: 1rem;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .container {
@@ -19,22 +33,23 @@ header {
     padding: 2rem;
     gap: 2rem;
     align-items: flex-start;
+    flex: 1;
 }
 
 .panel {
     flex: 1;
     min-width: 300px;
-    background-color: #fff;
+    background-color: var(--panel-background);
     border-radius: 8px;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px var(--shadow-color);
 }
 
 .image-container {
     width: 100%;
     min-height: 350px;
     height: auto;
-    border: 2px dashed #ccc;
+    border: 2px dashed var(--border-dashed);
     border-radius: 8px;
     margin-top: 1rem;
     display: flex;
@@ -52,7 +67,7 @@ header {
 }
 
 #ascii-output {
-    background: white;
+    background: var(--panel-background);
     font-family: "Courier New", Courier, monospace;
     font-size: 5px;
     line-height: 1;
@@ -62,22 +77,26 @@ header {
     display: none;
 }
 
-button {
+/* --- REFINED BUTTON STYLES --- */
+button, .button-style {
     display: block;
     width: 100%;
     padding: 0.75rem;
     margin-top: 1rem;
     border: none;
     border-radius: 5px;
-    background-color: #007bff;
+    background-color: var(--primary-color);
     color: white;
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.3s;
+    text-align: center;
+    box-sizing: border-box; /* Ensures padding doesn't affect width */
 }
 
-button:hover:not(:disabled) {
-    background-color: #0056b3;
+button:hover:not(:disabled),
+.button-style:hover {
+    background-color: var(--primary-hover);
 }
 
 button:disabled {
@@ -91,7 +110,7 @@ button:disabled {
     border-top: 1px solid #eee;
 }
 
-.controls>label {
+.controls > label {
     display: block;
     margin-bottom: 0.5rem;
 }
@@ -100,20 +119,53 @@ button:disabled {
     width: 100%;
     padding: 0.5rem;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-dashed);
     margin-bottom: 1rem;
 }
 
-/* --- NEW CSS FOR CONTROLS --- */
 .filter-controls {
     padding: 0.5rem 0;
 }
+
 .filter-controls label {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 0.5rem;
 }
+
 .filter-controls input[type="range"] {
     flex: 1;
+}
+
+/* --- ACCESSIBILITY --- */
+button:focus-visible, 
+select:focus-visible, 
+input:focus-visible {
+    outline: 3px solid var(--primary-hover);
+    outline-offset: 2px;
+}
+
+footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+footer a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+footer a:hover {
+    text-decoration: underline;
+}
+
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 800px) {
+    .container {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+    }
 }
