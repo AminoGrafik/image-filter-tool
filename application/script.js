@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM ELEMENT SELECTION ---
-    const customUploadButton = document.getElementById('custom-upload-button');
     const uploadButton = document.getElementById('upload-button');
     const imagePreview = document.getElementById('image-preview');
     const filteredCanvas = document.getElementById('filtered-canvas');
@@ -8,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterSelect = document.getElementById('filter-select');
     
     // Filter Controls
-    const allFilterControls = document.querySelectorAll('.filter-controls');
     const duotoneControls = document.getElementById('duotone-controls');
     const pixelateControls = document.getElementById('pixelate-controls');
     const vignetteControls = document.getElementById('vignette-controls');
@@ -24,18 +22,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let originalImage = null;
 
     // --- EVENT LISTENERS ---
-    customUploadButton.addEventListener('click', () => uploadButton.click());
     uploadButton.addEventListener('change', handleImageUpload);
     filterSelect.addEventListener('change', applyCurrentFilter);
     
-    // Add event listeners to all sliders
     document.querySelectorAll('input[type="range"]').forEach(slider => {
         slider.addEventListener('input', applyCurrentFilter);
     });
     
-    // Update slider value text display
     pixelateSlider.addEventListener('input', () => pixelateValue.textContent = pixelateSlider.value);
     vignetteSlider.addEventListener('input', () => vignetteValue.textContent = vignetteSlider.value);
+
+    document.querySelectorAll('input[type="color"]').forEach(picker => {
+        picker.addEventListener('input', applyCurrentFilter);
+    });
 
 
     // --- CORE FUNCTIONS ---
@@ -47,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 imagePreview.src = e.target.result;
                 originalImage = new Image();
                 originalImage.onload = () => {
-                    filterSelect.value = 'none'; // Reset filter selection
+                    filterSelect.value = 'none';
                     applyCurrentFilter();
                     downloadButton.disabled = false;
                 };
@@ -63,12 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedFilter = filterSelect.value;
         toggleControlVisibility(selectedFilter);
 
-        // Reset canvas to original image before applying any filter
         filteredCanvas.width = originalImage.width;
         filteredCanvas.height = originalImage.height;
         ctx.drawImage(originalImage, 0, 0);
 
-        // Route to the correct filter function
         switch (selectedFilter) {
             case 'duotone': applyDuotoneFilter(); break;
             case 'grayscale': applyGrayscaleFilter(); break;
@@ -80,34 +77,36 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'vintage': applyVintageFilter(); break;
             case 'ascii': applyAsciiFilter(); break;
             case 'none':
-            default: // No filter, just show the original
+            default:
                 ctx.drawImage(originalImage, 0, 0);
                 break;
         }
     }
 
     function toggleControlVisibility(filter) {
-        // Show canvas and hide ASCII output by default
         filteredCanvas.style.display = 'block';
         asciiOutput.style.display = 'none';
         
-        // Hide all specific controls first
-        allFilterControls.forEach(control => control.style.display = 'none');
+        // Hide all controls by adding the 'hidden' attribute
+        duotoneControls.hidden = true;
+        pixelateControls.hidden = true;
+        vignetteControls.hidden = true;
+        asciiControls.hidden = true;
 
-        // Show controls for the selected filter
+        // Show controls for the selected filter by removing the 'hidden' attribute
         switch (filter) {
-            case 'duotone': duotoneControls.style.display = 'flex'; break;
-            case 'pixelate': pixelateControls.style.display = 'block'; break;
-            case 'vignette': vignetteControls.style.display = 'block'; break;
+            case 'duotone': duotoneControls.hidden = false; break;
+            case 'pixelate': pixelateControls.hidden = false; break;
+            case 'vignette': vignetteControls.hidden = false; break;
             case 'ascii':
-                asciiControls.style.display = 'block';
-                filteredCanvas.style.display = 'none'; // Hide canvas for ASCII
-                asciiOutput.style.display = 'block';  // Show ASCII output
+                asciiControls.hidden = false;
+                filteredCanvas.style.display = 'none';
+                asciiOutput.style.display = 'block';
                 break;
         }
     }
 
-    // --- FILTER IMPLEMENTATIONS ---
+    // --- FILTER IMPLEMENTATIONS (Unchanged from previous version) ---
 
     function getPixelData() {
         return ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
@@ -167,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const h = filteredCanvas.height;
         for (let y = 0; y < h; y += blockSize) {
             for (let x = 0; x < w; x += blockSize) {
-                const pixel = ctx.getImageData(x, y, 1, 1).data;
+                const pixel = ctx.getImageData(x + Math.floor(blockSize/2), y + Math.floor(blockSize/2), 1, 1).data;
                 ctx.fillStyle = `rgba(${pixel[0]},${pixel[1]},${pixel[2]},${pixel[3]/255})`;
                 ctx.fillRect(x, y, blockSize, blockSize);
             }
@@ -190,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dx = centerX - x;
                 const dy = centerY - y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-                const fade = Math.max(0, 1 - (dist / radius) * strength * 2);
+                const fade = Math.max(0, 1 - (dist / radius) * strength * 1.5);
                 data[i] *= fade;
                 data[i + 1] *= fade;
                 data[i + 2] *= fade;
@@ -200,27 +199,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function applyVintageFilter() {
-        // 1. Apply Sepia
         applySepiaFilter();
-        // 2. Apply Vignette (re-uses vignette logic with a fixed strength)
         const imageData = getPixelData();
         const data = imageData.data;
         const w = filteredCanvas.width;
         const h = filteredCanvas.height;
         const centerX = w / 2;
         const centerY = h / 2;
-        const strength = 0.6; // Fixed strength for this effect
+        const strength = 0.7;
         const radius = Math.sqrt(centerX * centerX + centerY * centerY);
 
         for (let y = 0; y < h; y++) {
             for (let x = 0; x < w; x++) {
                 const i = (y * w + x) * 4;
-                // Vignette logic
                 const dx = centerX - x;
                 const dy = centerY - y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 const fade = Math.max(0, 1 - (dist / radius) * strength);
-                // Noise logic
                 const noise = (Math.random() - 0.5) * 40;
                 data[i] = data[i] * fade + noise;
                 data[i + 1] = data[i + 1] * fade + noise;
@@ -231,30 +226,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function applySketchFilter() {
-        applyGrayscaleFilter(); // Start with a grayscale image
+        applyGrayscaleFilter();
         const imageData = getPixelData();
         const data = imageData.data;
-        const w = filteredCanvas.width;
-        const h = filteredCanvas.height;
-        const outputData = ctx.createImageData(w, h);
-        const out = outputData.data;
-
-        // Invert the grayscale image to find highlights
-        const invertedData = [];
+        const inverted = [];
         for (let i = 0; i < data.length; i += 4) {
-            invertedData[i] = 255 - data[i];
-            invertedData[i + 1] = 255 - data[i + 1];
-            invertedData[i + 2] = 255 - data[i + 2];
-            invertedData[i + 3] = data[i + 3];
+            inverted[i] = 255 - data[i];
+            inverted[i + 1] = 255 - data[i + 1];
+            inverted[i + 2] = 255 - data[i + 2];
+            inverted[i + 3] = data[i + 3];
         }
-
-        // Simple "Color Dodge" blend between original and inverted
+        const outputData = ctx.createImageData(filteredCanvas.width, filteredCanvas.height);
         for (let i = 0; i < data.length; i += 4) {
             const base = data[i];
-            const blend = invertedData[i];
+            const blend = inverted[i];
             const final_v = (base === 255) ? base : Math.min(255, ((base << 8) / (255 - blend)));
-            out[i] = out[i + 1] = out[i + 2] = final_v;
-            out[i + 3] = 255;
+            outputData.data[i] = outputData.data[i + 1] = outputData.data[i + 2] = final_v;
+            outputData.data[i + 3] = 255;
         }
         ctx.putImageData(outputData, 0, 0);
     }
