@@ -4,8 +4,6 @@ A powerful, browser-based image manipulation tool built with vanilla HTML, CSS, 
 
 ### [Live Demo 🚀](https://aminografik.github.io/image-filter-tool/application/)
 
-*(Don't forget to replace `your-username` with your actual GitHub username!)*
-
 ---
 
 ## ✨ Features
