@@ -2,7 +2,7 @@
 
 A powerful, browser-based image manipulation tool built with vanilla HTML, CSS, and JavaScript. Upload your image, apply stunning real-time effects, and download your creation. This project is live and continuously evolving, with a goal of implementing over 10 unique image effects!
 
-### [Live Demo 🚀](https://your-username.github.io/image-filter-tool/application/)
+### [Live Demo 🚀](https://aminographik.github.io/image-filter-tool/application/)
 
 *(Don't forget to replace `your-username` with your actual GitHub username!)*
 
