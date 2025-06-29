@@ -130,7 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         asciiOutput.textContent = asciiStr;
 
-        // *** THIS IS THE CORRECTED PART ***
         // Base the font-size on the visible asciiOutput element, not the hidden canvas
         if (asciiOutput.clientWidth > 0) {
             asciiOutput.style.fontSize = `${asciiOutput.clientWidth / maxWidth * 1.4}px`;
