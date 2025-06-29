@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Filter Tool</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Image Filter Tool</h1>
+    </header>
+    <main class="container">
+        <div class="panel left-panel">
+            <h2>Original Image</h2>
+            <div class="image-container">
+                <img id="image-preview" src="" alt="Your uploaded image will appear here.">
+            </div>
+            <input type="file" id="upload-button" accept="image/*" style="display: none;">
+            <button id="custom-upload-button">Upload Image</button>
+        </div>
+        <div class="panel right-panel">
+            <h2>Filtered Image</h2>
+            <div class="image-container">
+                <canvas id="filtered-canvas"></canvas>
+                <pre id="ascii-output" class="ascii-art"></pre>
+            </div>
+            <div class="controls">
+                <label for="filter-select">Choose Filter:</label>
+                <select id="filter-select">
+                    <option value="duotone">Duotone</option>
+                    <option value="ascii">ASCII Art</option>
+                </select>
+
+                <div id="duotone-controls">
+                    <label for="color1">Color 1:</label>
+                    <input type="color" id="color1" value="#0000FF">
+                    <label for="color2">Color 2:</label>
+                    <input type="color" id="color2" value="#FFFF00">
+                </div>
+
+                <div id="ascii-controls" style="display: none;">
+                    <p>ASCII controls are automatic.</p>
+                </div>
+            </div>
+            <button id="download-button" disabled>Download Image</button>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
