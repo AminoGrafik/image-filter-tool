@@ -18,7 +18,7 @@ header {
     flex-wrap: wrap;
     padding: 2rem;
     gap: 2rem;
-    align-items: flex-start; /* Align items to the top */
+    align-items: flex-start;
 }
 
 .panel {
@@ -30,11 +30,10 @@ header {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* --- KEY CHANGES ARE HERE --- */
 .image-container {
     width: 100%;
-    min-height: 350px; /* Set a minimum height */
-    height: auto;      /* Allow height to grow based on content */
+    min-height: 350px;
+    height: auto;
     border: 2px dashed #ccc;
     border-radius: 8px;
     margin-top: 1rem;
@@ -45,26 +44,23 @@ header {
     position: relative;
 }
 
-#image-preview, #filtered-canvas {
+#image-preview,
+#filtered-canvas {
     max-width: 100%;
-    max-height: 100%; /* Changed to 100% to respect container */
+    max-height: 100%;
     display: block;
 }
 
-/* Let ASCII art control its own size */
 #ascii-output {
     background: white;
     font-family: "Courier New", Courier, monospace;
-    font-size: 5px; /* Will be adjusted by JS */
+    font-size: 5px;
     line-height: 1;
     white-space: pre;
     text-align: center;
     padding: 10px;
-    /* Removed position:absolute and height:100% to let it have natural height */
-    display: none; /* Hidden by default */
+    display: none;
 }
-/* --- END OF KEY CHANGES --- */
-
 
 button {
     display: block;
@@ -95,7 +91,7 @@ button:disabled {
     border-top: 1px solid #eee;
 }
 
-.controls label, .controls select, .controls p {
+.controls>label {
     display: block;
     margin-bottom: 0.5rem;
 }
@@ -105,10 +101,19 @@ button:disabled {
     padding: 0.5rem;
     border-radius: 4px;
     border: 1px solid #ccc;
+    margin-bottom: 1rem;
 }
 
-#duotone-controls {
+/* --- NEW CSS FOR CONTROLS --- */
+.filter-controls {
+    padding: 0.5rem 0;
+}
+.filter-controls label {
     display: flex;
-    gap: 1rem;
     align-items: center;
+    gap: 10px;
+    margin-bottom: 0.5rem;
+}
+.filter-controls input[type="range"] {
+    flex: 1;
 }
