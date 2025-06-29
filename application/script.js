@@ -1,27 +1,45 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
+    // --- DOM ELEMENT SELECTION ---
     const customUploadButton = document.getElementById('custom-upload-button');
     const uploadButton = document.getElementById('upload-button');
     const imagePreview = document.getElementById('image-preview');
     const filteredCanvas = document.getElementById('filtered-canvas');
     const downloadButton = document.getElementById('download-button');
     const filterSelect = document.getElementById('filter-select');
+    
+    // Filter Controls
+    const allFilterControls = document.querySelectorAll('.filter-controls');
     const duotoneControls = document.getElementById('duotone-controls');
+    const pixelateControls = document.getElementById('pixelate-controls');
+    const vignetteControls = document.getElementById('vignette-controls');
     const asciiControls = document.getElementById('ascii-controls');
-    const color1Input = document.getElementById('color1');
-    const color2Input = document.getElementById('color2');
-    const asciiOutput = document.getElementById('ascii-output');
+    
+    // Sliders and Values
+    const pixelateSlider = document.getElementById('pixelate-slider');
+    const pixelateValue = document.getElementById('pixelate-value');
+    const vignetteSlider = document.getElementById('vignette-slider');
+    const vignetteValue = document.getElementById('vignette-value');
 
     const ctx = filteredCanvas.getContext('2d');
     let originalImage = null;
 
-    // Trigger hidden file input when the custom button is clicked
-    customUploadButton.addEventListener('click', () => {
-        uploadButton.click();
+    // --- EVENT LISTENERS ---
+    customUploadButton.addEventListener('click', () => uploadButton.click());
+    uploadButton.addEventListener('change', handleImageUpload);
+    filterSelect.addEventListener('change', applyCurrentFilter);
+    
+    // Add event listeners to all sliders
+    document.querySelectorAll('input[type="range"]').forEach(slider => {
+        slider.addEventListener('input', applyCurrentFilter);
     });
+    
+    // Update slider value text display
+    pixelateSlider.addEventListener('input', () => pixelateValue.textContent = pixelateSlider.value);
+    vignetteSlider.addEventListener('input', () => vignetteValue.textContent = vignetteSlider.value);
 
-    // Handle image upload and processing
-    uploadButton.addEventListener('change', (event) => {
+
+    // --- CORE FUNCTIONS ---
+    function handleImageUpload(event) {
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
@@ -29,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 imagePreview.src = e.target.result;
                 originalImage = new Image();
                 originalImage.onload = () => {
+                    filterSelect.value = 'none'; // Reset filter selection
                     applyCurrentFilter();
                     downloadButton.disabled = false;
                 };
@@ -36,67 +55,79 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             reader.readAsDataURL(file);
         }
-    });
+    }
 
-    // Re-apply the current filter whenever a control is changed
-    filterSelect.addEventListener('change', applyCurrentFilter);
-    color1Input.addEventListener('input', applyCurrentFilter);
-    color2Input.addEventListener('input', applyCurrentFilter);
-
-    // Main function to direct to the correct filter
     function applyCurrentFilter() {
         if (!originalImage) return;
 
         const selectedFilter = filterSelect.value;
         toggleControlVisibility(selectedFilter);
 
-        // Reset canvas to original image before applying filter
+        // Reset canvas to original image before applying any filter
         filteredCanvas.width = originalImage.width;
         filteredCanvas.height = originalImage.height;
         ctx.drawImage(originalImage, 0, 0);
 
-        if (selectedFilter === 'duotone') {
-            applyDuotoneFilter();
-        } else if (selectedFilter === 'ascii') {
-            applyAsciiFilter();
-        } else if (selectedFilter === 'sepia') {
-            applySepiaFilter();
-        } else if (selectedFilter === 'invert') {
-            applyInvertFilter();
+        // Route to the correct filter function
+        switch (selectedFilter) {
+            case 'duotone': applyDuotoneFilter(); break;
+            case 'grayscale': applyGrayscaleFilter(); break;
+            case 'sepia': applySepiaFilter(); break;
+            case 'invert': applyInvertFilter(); break;
+            case 'pixelate': applyPixelateFilter(); break;
+            case 'vignette': applyVignetteFilter(); break;
+            case 'sketch': applySketchFilter(); break;
+            case 'vintage': applyVintageFilter(); break;
+            case 'ascii': applyAsciiFilter(); break;
+            case 'none':
+            default: // No filter, just show the original
+                ctx.drawImage(originalImage, 0, 0);
+                break;
         }
     }
 
-    // Manages which control panel is visible based on the selected filter
     function toggleControlVisibility(filter) {
-        // Show canvas and hide ASCII output by default for all image filters
+        // Show canvas and hide ASCII output by default
         filteredCanvas.style.display = 'block';
         asciiOutput.style.display = 'none';
+        
+        // Hide all specific controls first
+        allFilterControls.forEach(control => control.style.display = 'none');
 
-        if (filter === 'duotone') {
-            duotoneControls.style.display = 'flex';
-            asciiControls.style.display = 'none';
-        } else if (filter === 'ascii') {
-            asciiControls.style.display = 'block';
-            duotoneControls.style.display = 'none';
-            // For ASCII, hide the canvas and show the text output
-            filteredCanvas.style.display = 'none';
-            asciiOutput.style.display = 'block';
-        } else {
-            // For all other filters (Sepia, Invert, etc.), hide all specific controls
-            duotoneControls.style.display = 'none';
-            asciiControls.style.display = 'none';
+        // Show controls for the selected filter
+        switch (filter) {
+            case 'duotone': duotoneControls.style.display = 'flex'; break;
+            case 'pixelate': pixelateControls.style.display = 'block'; break;
+            case 'vignette': vignetteControls.style.display = 'block'; break;
+            case 'ascii':
+                asciiControls.style.display = 'block';
+                filteredCanvas.style.display = 'none'; // Hide canvas for ASCII
+                asciiOutput.style.display = 'block';  // Show ASCII output
+                break;
         }
     }
-    
-    // === NEW FILTER FUNCTION: SEPIA ===
-    function applySepiaFilter() {
-        const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
+
+    // --- FILTER IMPLEMENTATIONS ---
+
+    function getPixelData() {
+        return ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
+    }
+
+    function applyGrayscaleFilter() {
+        const imageData = getPixelData();
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            
+            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            data[i] = data[i + 1] = data[i + 2] = avg;
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    function applySepiaFilter() {
+        const imageData = getPixelData();
+        const data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i], g = data[i + 1], b = data[i + 2];
             data[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
             data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
             data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
@@ -104,25 +135,22 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.putImageData(imageData, 0, 0);
     }
 
-    // === NEW FILTER FUNCTION: INVERT ===
     function applyInvertFilter() {
-        const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
+        const imageData = getPixelData();
         const data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
-            data[i] = 255 - data[i];         // Red
-            data[i + 1] = 255 - data[i + 1]; // Green
-            data[i + 2] = 255 - data[i + 2]; // Blue
+            data[i] = 255 - data[i];
+            data[i + 1] = 255 - data[i + 1];
+            data[i + 2] = 255 - data[i + 2];
         }
         ctx.putImageData(imageData, 0, 0);
     }
 
-    // Applies the DUOTONE effect to the canvas
     function applyDuotoneFilter() {
-        const imageData = ctx.getImageData(0, 0, filteredCanvas.width, filteredCanvas.height);
+        const imageData = getPixelData();
         const data = imageData.data;
-        const color1 = hexToRgb(color1Input.value);
-        const color2 = hexToRgb(color2Input.value);
-
+        const color1 = hexToRgb(document.getElementById('color1').value);
+        const color2 = hexToRgb(document.getElementById('color2').value);
         for (let i = 0; i < data.length; i += 4) {
             const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
             const t = avg / 255;
@@ -133,7 +161,104 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.putImageData(imageData, 0, 0);
     }
 
-    // Applies the ASCII ART effect
+    function applyPixelateFilter() {
+        const blockSize = parseInt(pixelateSlider.value, 10);
+        const w = filteredCanvas.width;
+        const h = filteredCanvas.height;
+        for (let y = 0; y < h; y += blockSize) {
+            for (let x = 0; x < w; x += blockSize) {
+                const pixel = ctx.getImageData(x, y, 1, 1).data;
+                ctx.fillStyle = `rgba(${pixel[0]},${pixel[1]},${pixel[2]},${pixel[3]/255})`;
+                ctx.fillRect(x, y, blockSize, blockSize);
+            }
+        }
+    }
+
+    function applyVignetteFilter() {
+        const imageData = getPixelData();
+        const data = imageData.data;
+        const w = filteredCanvas.width;
+        const h = filteredCanvas.height;
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const strength = parseInt(vignetteSlider.value, 10) / 100;
+        const radius = Math.sqrt(centerX * centerX + centerY * centerY);
+
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const i = (y * w + x) * 4;
+                const dx = centerX - x;
+                const dy = centerY - y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const fade = Math.max(0, 1 - (dist / radius) * strength * 2);
+                data[i] *= fade;
+                data[i + 1] *= fade;
+                data[i + 2] *= fade;
+            }
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    function applyVintageFilter() {
+        // 1. Apply Sepia
+        applySepiaFilter();
+        // 2. Apply Vignette (re-uses vignette logic with a fixed strength)
+        const imageData = getPixelData();
+        const data = imageData.data;
+        const w = filteredCanvas.width;
+        const h = filteredCanvas.height;
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const strength = 0.6; // Fixed strength for this effect
+        const radius = Math.sqrt(centerX * centerX + centerY * centerY);
+
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const i = (y * w + x) * 4;
+                // Vignette logic
+                const dx = centerX - x;
+                const dy = centerY - y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const fade = Math.max(0, 1 - (dist / radius) * strength);
+                // Noise logic
+                const noise = (Math.random() - 0.5) * 40;
+                data[i] = data[i] * fade + noise;
+                data[i + 1] = data[i + 1] * fade + noise;
+                data[i + 2] = data[i + 2] * fade + noise;
+            }
+        }
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    function applySketchFilter() {
+        applyGrayscaleFilter(); // Start with a grayscale image
+        const imageData = getPixelData();
+        const data = imageData.data;
+        const w = filteredCanvas.width;
+        const h = filteredCanvas.height;
+        const outputData = ctx.createImageData(w, h);
+        const out = outputData.data;
+
+        // Invert the grayscale image to find highlights
+        const invertedData = [];
+        for (let i = 0; i < data.length; i += 4) {
+            invertedData[i] = 255 - data[i];
+            invertedData[i + 1] = 255 - data[i + 1];
+            invertedData[i + 2] = 255 - data[i + 2];
+            invertedData[i + 3] = data[i + 3];
+        }
+
+        // Simple "Color Dodge" blend between original and inverted
+        for (let i = 0; i < data.length; i += 4) {
+            const base = data[i];
+            const blend = invertedData[i];
+            const final_v = (base === 255) ? base : Math.min(255, ((base << 8) / (255 - blend)));
+            out[i] = out[i + 1] = out[i + 2] = final_v;
+            out[i + 3] = 255;
+        }
+        ctx.putImageData(outputData, 0, 0);
+    }
+
     function applyAsciiFilter() {
         const density = 'Ñ@#W$9876543210?!abc;:+=-,._ ';
         const tempCanvas = document.createElement('canvas');
@@ -162,10 +287,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Handles downloading the generated image or text file
+    // --- UTILITY AND DOWNLOAD ---
     downloadButton.addEventListener('click', () => {
         if (!originalImage) return;
-
         const selectedFilter = filterSelect.value;
         const link = document.createElement('a');
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -175,20 +299,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const blob = new Blob([asciiOutput.textContent], { type: 'text/plain' });
             link.href = URL.createObjectURL(blob);
         } else {
-            // This now handles Duotone, Sepia, Invert, and any future canvas filters
-            link.download = `${selectedFilter}-image-${timestamp}.png`;
+            const filename = selectedFilter === 'none' ? 'original' : selectedFilter;
+            link.download = `${filename}-image-${timestamp}.png`;
             link.href = filteredCanvas.toDataURL('image/png');
         }
         link.click();
     });
 
-    // Helper utility to convert a hex color string to an RGB object
     function hexToRgb(hex) {
         const bigint = parseInt(hex.slice(1), 16);
-        return {
-            r: (bigint >> 16) & 255,
-            g: (bigint >> 8) & 255,
-            b: bigint & 255
-        };
+        return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
     }
 });
