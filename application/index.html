@@ -18,9 +18,10 @@
             <div class="image-container">
                 <img id="image-preview" src="" alt="Your uploaded image will appear here.">
             </div>
-            <input type="file" id="upload-button" accept="image/*" style="display: none;">
-            <label for="upload-button" class="button-style" id="custom-upload-button">Upload Image</label>
+            <label for="upload-button" class="button-style">Upload Image</label>
+            <input type="file" id="upload-button" class="visually-hidden" accept="image/*">
         </div>
+
         <div class="panel right-panel">
             <h2>Filtered Image</h2>
             <div class="image-container">
@@ -28,36 +29,38 @@
                 <pre id="ascii-output" class="ascii-art"></pre>
             </div>
             <div class="controls">
-                <label for="filter-select">Choose Filter:</label>
-                <select id="filter-select">
-                    <option value="none" selected>None</option>
-                    <option value="duotone">Duotone</option>
-                    <option value="grayscale">Grayscale</option>
-                    <option value="sepia">Sepia</option>
-                    <option value="invert">Invert</option>
-                    <option value="pixelate">Pixelate</option>
-                    <option value="vignette">Vignette</option>
-                    <option value="sketch">Sketch</option>
-                    <option value="vintage">Vintage</option>
-                    <option value="ascii">ASCII Art</option>
-                </select>
+                <div class="control-group">
+                    <label for="filter-select">Choose Filter:</label>
+                    <select id="filter-select">
+                        <option value="none" selected>None</option>
+                        <option value="duotone">Duotone</option>
+                        <option value="grayscale">Grayscale</option>
+                        <option value="sepia">Sepia</option>
+                        <option value="invert">Invert</option>
+                        <option value="pixelate">Pixelate</option>
+                        <option value="vignette">Vignette</option>
+                        <option value="sketch">Sketch</option>
+                        <option value="vintage">Vintage</option>
+                        <option value="ascii">ASCII Art</option>
+                    </select>
+                </div>
 
-                <div id="duotone-controls" class="filter-controls" style="display: none;">
+                <div id="duotone-controls" class="filter-controls" hidden>
                     <label for="color1">Color 1: <input type="color" id="color1" value="#0000FF"></label>
                     <label for="color2">Color 2: <input type="color" id="color2" value="#FFFF00"></label>
                 </div>
                 
-                <div id="pixelate-controls" class="filter-controls" style="display: none;">
-                    <label for="pixelate-slider">Block Size: <span id="pixelate-value">10</span>px</label>
+                <div id="pixelate-controls" class="filter-controls" hidden>
+                    <label for="pixelate-slider">Block Size: <span id="pixelate-value" aria-live="polite">10</span>px</label>
                     <input type="range" id="pixelate-slider" min="2" max="50" value="10">
                 </div>
 
-                <div id="vignette-controls" class="filter-controls" style="display: none;">
-                    <label for="vignette-slider">Strength: <span id="vignette-value">50</span>%</label>
+                <div id="vignette-controls" class="filter-controls" hidden>
+                    <label for="vignette-slider">Strength: <span id="vignette-value" aria-live="polite">50</span>%</label>
                     <input type="range" id="vignette-slider" min="0" max="100" value="50">
                 </div>
 
-                <div id="ascii-controls" class="filter-controls" style="display: none;">
+                <div id="ascii-controls" class="filter-controls" hidden>
                     <p>ASCII controls are automatic.</p>
                 </div>
             </div>
